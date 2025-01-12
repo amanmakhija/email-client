@@ -9,6 +9,7 @@ export const maxDuration = 300;
 export const POST = async (req: NextRequest) => {
   const body = await req.json();
   const { accountId, userId } = body;
+
   if (!accountId || !userId)
     return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
 
@@ -18,17 +19,18 @@ export const POST = async (req: NextRequest) => {
       userId,
     },
   });
+
   if (!dbAccount)
     return NextResponse.json({ error: "ACCOUNT_NOT_FOUND" }, { status: 404 });
 
   const account = new Account(dbAccount.token);
   await account.createSubscription();
   const response = await account.performInitialSync();
+
   if (!response)
     return NextResponse.json({ error: "FAILED_TO_SYNC" }, { status: 500 });
 
   const { deltaToken, emails } = response;
-  console.log("got emails dfjkshakfjhsdks", emails);
 
   await syncEmailsToDatabase(emails, accountId);
 
@@ -40,6 +42,6 @@ export const POST = async (req: NextRequest) => {
       nextDeltaToken: deltaToken,
     },
   });
-  console.log("sync complete", deltaToken);
+
   return NextResponse.json({ success: true, deltaToken }, { status: 200 });
 };
